@@ -49,7 +49,7 @@ from ...qemu_utils import QemuOptions
 class BuildBBLBase(CrossCompileAutotoolsProject):
     do_not_add_to_targets = True
     repository = GitRepository(
-        "https://github.com/CTSRD-CHERI/riscv-pk",
+        "https://github.com/SigCheri/riscv-pk",
         force_branch=True,
         default_branch="cheri_purecap",
         # Compilation fixes for clang and support for CHERI

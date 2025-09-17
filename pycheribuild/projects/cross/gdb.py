@@ -279,7 +279,7 @@ class BuildGDB(BuildGDBBase):
     native_install_dir = DefaultInstallDir.CHERI_SDK
     default_branch = "cheri-14"
     repository = GitRepository(
-        "https://github.com/CTSRD-CHERI/gdb.git",
+        "https://github.com/SigCheri/gdb.git",
         # Branch name is changed for every major GDB release:
         default_branch=default_branch,
         old_branches={
@@ -297,7 +297,7 @@ class BuildGDB(BuildGDBBase):
 class BuildKGDB(BuildGDB):
     default_branch = "cheri-14-kgdb"
     repository = GitRepository(
-        "https://github.com/CTSRD-CHERI/gdb.git",
+        "https://github.com/SigCheri/gdb.git",
         # Branch name is changed for every major GDB release:
         default_branch=default_branch,
         old_branches={
