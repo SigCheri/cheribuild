@@ -200,9 +200,14 @@ class DefaultCheriConfig(CheriConfig):
         )
 
         # configurable paths
+        current_path = Path(os.path.abspath(os.path.dirname(__file__)))
+        workspace_root = os.path.join(current_path, "..", "..", "..", "cheri")
+        if not os.path.exists(workspace_root):
+            os.mkdir(workspace_root)
+
         self.source_root = loader.add_path_option(
             "source-root",
-            default=Path(os.path.expanduser("~/cheri")),
+            default=Path(workspace_root),
             group=loader.path_group,
             help="The directory to store all sources",
         )
