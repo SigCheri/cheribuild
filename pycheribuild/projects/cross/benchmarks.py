@@ -448,7 +448,7 @@ for _arch in BuildSpec2006New.supported_architectures:
 
 
 class BuildLMBench(BenchmarkMixin, CrossCompileProject):
-    repository = GitRepository("git@github.com:CTSRD-CHERI/cheri-lmbench", default_branch="cheri-lmbench")
+    repository = GitRepository("git@github.com:CTSRD-CHERI/cheri-lmbench", default_branch="master")
     cross_install_dir = DefaultInstallDir.ROOTFS_OPTBASE
     target = "lmbench"
     # Needs bsd make to build
@@ -458,7 +458,10 @@ class BuildLMBench(BenchmarkMixin, CrossCompileProject):
     # Keep the old bundles when cleaning
     _extra_git_clean_excludes = ["--exclude=*-bundle"]
     # The makefiles here can't support any other tagets:
-    supported_architectures = (CompilationTargets.NATIVE,)
+    supported_architectures = (CompilationTargets.NATIVE,   \
+                CompilationTargets.CHERIBSD_RISCV_NO_CHERI, \
+                CompilationTargets.CHERIBSD_RISCV_PURECAP
+    )
 
     @classmethod
     def setup_config_options(cls, **kwargs):
@@ -540,7 +543,10 @@ class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
     # Keep the old bundles when cleaning
     _extra_git_clean_excludes = ["--exclude=*-bundle"]
     # The makefiles here can't support any other tagets:
-    supported_architectures = (CompilationTargets.NATIVE,)
+    supported_architectures = supported_architectures = (CompilationTargets.NATIVE,   \
+                CompilationTargets.CHERIBSD_RISCV_NO_CHERI, \
+                CompilationTargets.CHERIBSD_RISCV_PURECAP
+    )
 
     @classmethod
     def setup_config_options(cls, **kwargs):
@@ -574,11 +580,12 @@ class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
         if not self.compiling_for_host():
             new_env = dict(
                 MIPS_SDK=self.target_info.sdk_root_dir,
+                RISCV_SDK=self.target_info.sdk_root_dir,
                 CHERI128_SDK=self.target_info.sdk_root_dir,
                 CHERI_SDK=self.target_info.sdk_root_dir,
             )
         with self.set_env(**new_env):
-            self.make_args.set(CC="clang")
+            self.make_args.set(CC=os.path.join(self.target_info.sdk_root_dir, "bin", "clang"))
             if self.compiling_for_mips(include_purecap=True):
                 self.make_args.set(OSNAME="freebsd")
                 if self.crosscompile_target.is_cheri_purecap():
@@ -586,8 +593,15 @@ class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
                 else:
                     self.make_args.set(ARCHNAME="mips64")
 
+            if self.compiling_for_riscv(include_purecap=True):
+                self.make_args.set(OSNAME="freebsd")
+                if self.crosscompile_target.is_cheri_purecap():
+                    self.make_args.set(ARCHNAME="rv64imafdcxcheri")
+                else:
+                    self.make_args.set(ARCHNAME="rv64imafdc")
+
             # link with libstatcounters
-            cflags = [*self.default_compiler_flags, "-lstatcounters"]
+            cflags = [*self.default_compiler_flags]
             if self.fixed_iterations:
                 cflags += ["-DUNIXBENCH_FIXED_ITER"]
             self.make_args.set(ADDITIONAL_CFLAGS=self.commandline_to_str(cflags))
