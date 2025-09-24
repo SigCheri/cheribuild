@@ -448,7 +448,7 @@ for _arch in BuildSpec2006New.supported_architectures:
 
 
 class BuildLMBench(BenchmarkMixin, CrossCompileProject):
-    repository = GitRepository("git@github.com:CTSRD-CHERI/cheri-lmbench", default_branch="master")
+    repository = GitRepository("git@github.com:SigCheri/lmbench", default_branch="master")
     cross_install_dir = DefaultInstallDir.ROOTFS_OPTBASE
     target = "lmbench"
     # Needs bsd make to build
@@ -495,8 +495,15 @@ class BuildLMBench(BenchmarkMixin, CrossCompileProject):
         with self.set_env(**new_env):
             self.make_args.set(CC="clang")
             if not self.compiling_for_host():
-                self.make_args.set(AR=str(self.sdk_bindir / "llvm-ar"))
-                self.make_args.set(OS="mips64c128-unknown-freebsd")
+                if self.compiling_for_mips(include_purecap=True):
+                    self.make_args.set(AR=str(self.sdk_bindir / "llvm-ar"))
+                    self.make_args.set(OS="mips64c128-unknown-freebsd")
+                if self.compiling_for_riscv(include_purecap=True):
+                    self.make_args.set(AR=str(self.sdk_bindir / "llvm-ar"))
+                    if self.crosscompile_target.is_cheri_purecap():
+                        self.make_args.set(OS="riscv64c128-unknown-freebsd")
+                    else:
+                        self.make_args.set(OS="riscv64-unknown-freebsd")
 
             self.make_args.set(ADDITIONAL_CFLAGS=self.commandline_to_str(self.default_compiler_flags))
             self.make_args.set(ADDITIONAL_LDFLAGS=self.commandline_to_str(self.default_ldflags))
@@ -515,11 +522,10 @@ class BuildLMBench(BenchmarkMixin, CrossCompileProject):
         self.install_file(self.source_dir / "Makefile", install_dir / "Makefile")
 
     def install(self, **kwargs):
-        if is_jenkins_build():
-            self._create_benchmark_dir(self.install_dir / self.bundle_dir.name)
-        else:
+        if self.compiling_for_host():
             self._create_benchmark_dir(self.bundle_dir)
-            self.info("Not installing LMBench for non-Jenkins builds")
+        else:
+            self._create_benchmark_dir(self._install_dir)
 
     def run_tests(self):
         if self.compiling_for_host():
