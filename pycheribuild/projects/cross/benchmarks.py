@@ -617,7 +617,10 @@ class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
         self.install_file(self.source_dir / "run.sh", install_dir / "run.sh")
 
     def install(self, **kwargs):
-        self._create_benchmark_dir(self.bundle_dir)
+        if self.compiling_for_host():
+            self._create_benchmark_dir(self.bundle_dir)
+        else:
+            self._create_benchmark_dir(self._install_dir)
 
 
 class NetPerfBench(BenchmarkMixin, CrossCompileAutotoolsProject):
