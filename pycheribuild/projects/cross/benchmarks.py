@@ -493,17 +493,16 @@ class BuildLMBench(BenchmarkMixin, CrossCompileProject):
                 CHERI_SDK=self.target_info.sdk_root_dir,
             )
         with self.set_env(**new_env):
-            self.make_args.set(CC="clang")
             if not self.compiling_for_host():
+                self.make_args.set(CC=os.path.join(self.target_info.sdk_root_dir, "bin", "clang"))
                 if self.compiling_for_mips(include_purecap=True):
                     self.make_args.set(AR=str(self.sdk_bindir / "llvm-ar"))
                     self.make_args.set(OS="mips64c128-unknown-freebsd")
                 if self.compiling_for_riscv(include_purecap=True):
                     self.make_args.set(AR=str(self.sdk_bindir / "llvm-ar"))
-                    if self.crosscompile_target.is_cheri_purecap():
-                        self.make_args.set(OS="riscv64c128-unknown-freebsd")
-                    else:
-                        self.make_args.set(OS="riscv64-unknown-freebsd")
+                    self.make_args.set(OS="riscv-FreeBSD")
+            else:
+                self.make_args.set(CC="clang")
 
             self.make_args.set(ADDITIONAL_CFLAGS=self.commandline_to_str(self.default_compiler_flags))
             self.make_args.set(ADDITIONAL_LDFLAGS=self.commandline_to_str(self.default_ldflags))
@@ -539,7 +538,7 @@ class BuildLMBench(BenchmarkMixin, CrossCompileProject):
 
 
 class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
-    repository = GitRepository("git@github.com:CTSRD-CHERI/cheri-unixbench", default_branch="cheri-unixbench")
+    repository = GitRepository("git@github.com:SigCheri/cheri-unixbench", default_branch="cheri-unixbench")
     cross_install_dir = DefaultInstallDir.ROOTFS_OPTBASE
     target = "unixbench"
     # Needs bsd make to build
@@ -591,7 +590,11 @@ class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
                 CHERI_SDK=self.target_info.sdk_root_dir,
             )
         with self.set_env(**new_env):
-            self.make_args.set(CC=os.path.join(self.target_info.sdk_root_dir, "bin", "clang"))
+            if not self.compiling_for_host():
+                self.make_args.set(CC=os.path.join(self.target_info.sdk_root_dir, "bin", "clang"))
+            else:
+                self.make_args.set(CC="clang")
+            
             if self.compiling_for_mips(include_purecap=True):
                 self.make_args.set(OSNAME="freebsd")
                 if self.crosscompile_target.is_cheri_purecap():
@@ -599,7 +602,7 @@ class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
                 else:
                     self.make_args.set(ARCHNAME="mips64")
 
-            if self.compiling_for_riscv(include_purecap=True):
+            elif self.compiling_for_riscv(include_purecap=True):
                 self.make_args.set(OSNAME="freebsd")
                 if self.crosscompile_target.is_cheri_purecap():
                     self.make_args.set(ARCHNAME="rv64imafdcxcheri")
@@ -621,6 +624,7 @@ class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
         self.clean_directory(install_dir / "pgms", keep_root=False, ensure_dir_exists=False)
         self.copy_directory(self.build_dir / "UnixBench" / "pgms", install_dir / "pgms")
         self.install_file(self.source_dir / "run.sh", install_dir / "run.sh")
+        self.install_file(self.source_dir / "Makefile", install_dir / "Makefile")
 
     def install(self, **kwargs):
         if self.compiling_for_host():
