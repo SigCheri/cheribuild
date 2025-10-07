@@ -36,7 +36,7 @@ from .crosscompileproject import CrossCompileCMakeProject, DefaultInstallDir, Gi
 
 
 class BuildSimpleCheriBenchmarks(BenchmarkMixin, CrossCompileCMakeProject):
-    repository = GitRepository("https://github.com/arichardson/simple-cheri-benchmarks.git")
+    repository = GitRepository("https://github.com/SigCheri/simple-cheri-benchmarks.git")
     cross_install_dir = DefaultInstallDir.ROOTFS_OPTBASE
     target = "simple-cheri-benchmarks"
 
