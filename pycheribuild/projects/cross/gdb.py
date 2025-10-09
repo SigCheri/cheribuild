@@ -75,8 +75,7 @@ class BuildGDBBase(CrossCompileAutotoolsProject):
     def dependencies(cls, config: CheriConfig) -> "tuple[str, ...]":
         deps = super().dependencies(config)
         # For the native and native-hybrid builds gmp must be installed via ports.
-        if not cls.get_crosscompile_target().is_native():
-            deps += ("gmp", "mpfr")
+        deps += ("gmp", "mpfr")
         return deps
 
     @classmethod
@@ -164,6 +163,9 @@ class BuildGDBBase(CrossCompileAutotoolsProject):
                 if self.compiling_for_cheri_hybrid():
                     self.configure_args.append(f"--with-gmp={self.target_info.localbase}")
                     self.configure_args.append(f"--with-mpfr={self.target_info.localbase}")
+            else:
+                self.configure_args.append("--with-gmp=" + str(BuildGmp.get_install_dir(self)))
+                self.configure_args.append("--with-mpfr=" + str(BuildMpfr.get_install_dir(self)))
             self.configure_args.append("--with-expat")
         else:
             self.configure_args.extend(["--without-python", "--without-expat", "--without-libunwind-ia64"])
