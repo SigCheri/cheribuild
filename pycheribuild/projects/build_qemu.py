@@ -58,7 +58,7 @@ from ..utils import OSInfo
 
 
 class BuildQEMUBase(AutotoolsProject):
-    repository = GitRepository("https://github.com/qemu/qemu.git")
+    repository = GitRepository("https://github.com/SigCheri/qemu.git")
     native_install_dir = DefaultInstallDir.CHERI_SDK
     # QEMU will not work with BSD make, need GNU make
     make_kind = MakeCommandKind.GnuMake
@@ -402,7 +402,7 @@ class RunMorelloQEMUTests(Project):
 
 # noinspection PyAbstractClass
 class BuildUpstreamQEMU(BuildQEMUBase):
-    repository = GitRepository("https://github.com/qemu/qemu.git")
+    repository = GitRepository("https://github.com/SigCheri/qemu.git")
     target = "upstream-qemu"
     _default_install_dir_fn = ComputedDefaultValue(
         function=lambda config, project: config.output_root / "upstream-qemu",
@@ -427,7 +427,7 @@ class BuildUpstreamQEMU(BuildQEMUBase):
 
     @classmethod
     def qemu_binary_for_target(cls, xtarget: CrossCompileTarget, config: CheriConfig):
-        if xtarget.is_hybrid_or_purecap_cheri():
+        if xtarget.is_hybrid_or_purecap_cheri() or xtarget.is_sigcheri():
             raise ValueError("Upstream QEMU does not support CHERI")
         if xtarget.is_aarch64():
             binary_name = "qemu-system-aarch64"
@@ -452,7 +452,7 @@ class BuildQEMU(BuildQEMUBase):
     default_targets = (
         "arm-softmmu,aarch64-softmmu,morello-softmmu,"
         "mips64-softmmu,mips64cheri128-softmmu,"
-        "riscv64-softmmu,riscv64cheri-softmmu,riscv32-softmmu,riscv32cheri-softmmu,"
+        "riscv64-softmmu,riscv64cheri-softmmu,,riscv64sigcheri-softmmu,riscv32-softmmu,riscv32cheri-softmmu,"
         "x86_64-softmmu"
     )
     # Turn on unaligned loads/stores by default
@@ -468,10 +468,16 @@ class BuildQEMU(BuildQEMUBase):
         # Always use the CHERI qemu even for plain riscv:
         if xtarget.is_riscv(include_purecap=True):
             xlen = 32 if xtarget.is_riscv32(include_purecap=True) else 64
-            binary_name = f"qemu-system-riscv{xlen}cheri"
-            # Prefer the xcheri-suffixed binary (if it exists) to ensure backwards compatibility.
-            if (config.qemu_bindir / f"qemu-system-riscv{xlen}xcheri").exists():
-                binary_name = f"qemu-system-riscv{xlen}xcheri"
+            if xtarget.is_cheri_sigcap():
+                binary_name = f"qemu-system-riscv{xlen}sigcheri"
+                # Prefer the xcheri-suffixed binary (if it exists) to ensure backwards compatibility.
+                if (config.qemu_bindir / f"qemu-system-riscv{xlen}xsigcheri").exists():
+                    binary_name = f"qemu-system-riscv{xlen}xsigcheri"
+            else:
+                binary_name = f"qemu-system-riscv{xlen}cheri"
+                # Prefer the xcheri-suffixed binary (if it exists) to ensure backwards compatibility.
+                if (config.qemu_bindir / f"qemu-system-riscv{xlen}xcheri").exists():
+                    binary_name = f"qemu-system-riscv{xlen}xcheri"
         elif xtarget.is_mips(include_purecap=True):
             binary_name = "qemu-system-mips64cheri128"
         elif xtarget.is_aarch64(include_purecap=True):
