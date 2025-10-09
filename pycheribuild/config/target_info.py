@@ -775,6 +775,7 @@ class CrossCompileTarget:
         cpu_architecture: CPUArchitecture,
         target_info_cls: "type[TargetInfo]",
         *,
+        is_sigcheri=False,
         is_cheri_purecap=False,
         is_cheri_hybrid=False,
         extra_target_suffix: str = "",
@@ -783,6 +784,7 @@ class CrossCompileTarget:
         non_cheri_target: "Optional[CrossCompileTarget]" = None,
         hybrid_target: "Optional[CrossCompileTarget]" = None,
         purecap_target: "Optional[CrossCompileTarget]" = None,
+        non_sigcheri_target: "Optional[CrossCompileTarget]" = None,
         non_cheri_for_hybrid_rootfs_target: "Optional[CrossCompileTarget]" = None,
         non_cheri_for_purecap_rootfs_target: "Optional[CrossCompileTarget]" = None,
         hybrid_for_purecap_rootfs_target: "Optional[CrossCompileTarget]" = None,
@@ -804,6 +806,7 @@ class CrossCompileTarget:
 
         self.cpu_architecture = cpu_architecture
         # TODO: self.operating_system = ...
+        self._is_sigcheri = is_sigcheri
         self._is_cheri_purecap = is_cheri_purecap
         self._is_cheri_hybrid = is_cheri_hybrid
         assert not (is_cheri_purecap and is_cheri_hybrid), "Can't be both hybrid and purecap"
@@ -812,6 +815,7 @@ class CrossCompileTarget:
         self.target_info_cls = target_info_cls
         # FIXME: there must be a better way of doing this, but this works for now
         self._non_cheri_target = non_cheri_target
+        self._non_sigcheri_target = non_sigcheri_target
         self._hybrid_target = hybrid_target
         self._purecap_target = purecap_target
         self._non_cheri_for_hybrid_rootfs_target = non_cheri_for_hybrid_rootfs_target
@@ -823,6 +827,7 @@ class CrossCompileTarget:
             # instance variables (or change the type of them) we can skip over these calls.
             return
         self._set_for(non_cheri_target)
+        self._set_for(non_sigcheri_target)
         self._set_for(hybrid_target)
         self._set_for(purecap_target)
         self._set_for(non_cheri_for_hybrid_rootfs_target)
@@ -850,7 +855,14 @@ class CrossCompileTarget:
     # Set the related targets:
     def _set_for(self, other_target: "Optional[CrossCompileTarget]", also_set_other=True) -> None:
         if other_target is not None and self is not other_target:
-            if self._is_cheri_hybrid:
+            if self._is_sigcheri:
+                if self._rootfs_target is not None:
+                    raise NotImplementedError()
+                else:
+                    assert other_target._non_sigcheri_target is None or other_target._non_sigcheri_target is self, "Already set?"
+                    other_target._non_sigcheri_target = self
+                    self._non_sigcheri_target = self
+            elif self._is_cheri_hybrid:
                 if self._rootfs_target is not None:
                     assert self._rootfs_target._is_cheri_purecap, (
                         "Only support purecap separate rootfs for hybrid targets"
@@ -985,6 +997,17 @@ class CrossCompileTarget:
 
     def is_any_x86(self, include_purecap: Optional[bool] = None) -> bool:
         return self.is_i386(include_purecap) or self.is_x86_64(include_purecap)
+    
+    def is_cheri_sigcap(self, valid_cpu_archs: "Optional[list[CPUArchitecture]]" = None) -> bool:
+        if valid_cpu_archs is None:
+            return self._is_cheri_sigcap
+        if not self._is_cheri_sigcap:
+            return False
+        # Purecap target, but must first check if one of the accepted architectures matches
+        for a in valid_cpu_archs:
+            if a is self.cpu_architecture:
+                return True
+        return False
 
     def is_cheri_purecap(self, valid_cpu_archs: "Optional[list[CPUArchitecture]]" = None) -> bool:
         if valid_cpu_archs is None:

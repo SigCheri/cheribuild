@@ -1182,6 +1182,20 @@ class CompilationTargets(BasicCompilationTargets):
         is_cheri_purecap=True,
         hybrid_target=CHERIBSD_RISCV_HYBRID,
     )
+    CHERTBSD_RISCV_SIGCHERI = CrossCompileTarget(
+        "riscv64-sigcheri",
+        CPUArchitecture.RISCV64,
+        CheriBSDTargetInfo,
+        is_sigcheri=True,
+        non_sigcheri_target=CHERIBSD_RISCV_NO_CHERI
+    )
+    CHERTBSD_RISCV_PURECAP_SIGCHERI = CrossCompileTarget(
+        "riscv64-purecap-sigcheri",
+        CPUArchitecture.RISCV64,
+        CheriBSDTargetInfo,
+        is_sigcheri=True,
+        non_sigcheri_target=CHERIBSD_RISCV_PURECAP
+    )
     CHERIBSD_RISCV_NO_CHERI_FOR_HYBRID_ROOTFS = CrossCompileTarget(
         "riscv64",
         CPUArchitecture.RISCV64,
