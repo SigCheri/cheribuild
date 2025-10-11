@@ -450,10 +450,11 @@ class BuildQEMU(BuildQEMUBase):
     target = "qemu"
     repository = GitRepository("https://github.com/SigCheri/qemu.git", default_branch="qemu-cheri")
     default_targets = (
-        "arm-softmmu,aarch64-softmmu,morello-softmmu,"
-        "mips64-softmmu,mips64cheri128-softmmu,"
-        "riscv64-softmmu,riscv64cheri-softmmu,,riscv64sigcheri-softmmu,riscv32-softmmu,riscv32cheri-softmmu,"
-        "x86_64-softmmu"
+        # "arm-softmmu,aarch64-softmmu,morello-softmmu,"
+        # "mips64-softmmu,mips64cheri128-softmmu,"
+        "riscv64-softmmu,riscv64cheri-softmmu,riscv64sigcheri-softmmu"
+        # "riscv32-softmmu,riscv32cheri-softmmu,"
+        # "x86_64-softmmu"
     )
     # Turn on unaligned loads/stores by default
     unaligned = BoolConfigOption("unaligned", show_help=False, help="Permit un-aligned loads/stores", default=False)
@@ -468,7 +469,7 @@ class BuildQEMU(BuildQEMUBase):
         # Always use the CHERI qemu even for plain riscv:
         if xtarget.is_riscv(include_purecap=True):
             xlen = 32 if xtarget.is_riscv32(include_purecap=True) else 64
-            if xtarget.is_cheri_sigcap():
+            if xtarget.is_hybridsig_or_puresig_sigcheri():
                 binary_name = f"qemu-system-riscv{xlen}sigcheri"
                 # Prefer the xcheri-suffixed binary (if it exists) to ensure backwards compatibility.
                 if (config.qemu_bindir / f"qemu-system-riscv{xlen}xsigcheri").exists():
