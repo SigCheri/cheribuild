@@ -777,6 +777,12 @@ class SimpleProject(AbstractProject, metaclass=ABCMeta if typing.TYPE_CHECKING e
     def compiling_for_cheri_hybrid(self, valid_cpu_archs: "Optional[list[CPUArchitecture]]" = None) -> bool:
         return self.crosscompile_target.is_cheri_hybrid(valid_cpu_archs)
 
+    def compile_for_sigcheri(self, valid_cpu_archs: "Optional[list[CPUArchitecture]]" = None) -> bool:
+        return self.crosscompile_target.is_cheri_puresig(valid_cpu_archs)
+
+    def compiling_for_sigcheri_hybridsig(self, valid_cpu_archs: "Optional[list[CPUArchitecture]]" = None) -> bool:
+        return self.crosscompile_target.is_sigcheri_hybridsig(valid_cpu_archs)
+
     def compiling_for_host(self) -> bool:
         return self.crosscompile_target.is_native()
 
