@@ -596,7 +596,9 @@ class BuildLLVMMonoRepoBase(BuildLLVMBase, BuildLLVMInterface):
 
     def add_compilers_with_config_files(self, prefix: str, rootfs_target: CrossCompileTarget):
         targets = [rootfs_target]
-        if rootfs_target.is_cheri_hybrid():
+        if rootfs_target.is_hybridsig_or_puresig_sigcheri():
+            pass
+        elif rootfs_target.is_cheri_hybrid():
             targets.append(rootfs_target.get_non_cheri_for_hybrid_rootfs_target())
             targets.append(rootfs_target.get_cheri_purecap_for_hybrid_rootfs_target())
         elif rootfs_target.is_cheri_purecap():
