@@ -66,6 +66,7 @@ class BuildBBLBase(CrossCompileAutotoolsProject):
     custom_payload: Optional[str] = None
     mem_start = "0x80000000"
     supported_architectures = (
+        CompilationTargets.FREESTANDING_RISCV64_PURECAP_HYBRIDSIG,
         CompilationTargets.FREESTANDING_RISCV64_PURECAP,
         CompilationTargets.FREESTANDING_RISCV64,
         CompilationTargets.FREESTANDING_RISCV32_PURECAP,
@@ -191,13 +192,19 @@ class BuildBBLNoPayload(BuildBBLBase):
             # Install into the QEMU firware directory so that `-bios default` works
             qemu_fw_dir = BuildQEMU.get_firmware_dir(self, cross_target=CompilationTargets.NATIVE)
             self.makedirs(qemu_fw_dir)
+
+            if self.crosscompile_target.is_sigcheri_hybridsig():
+                bbl_fw_jump_name = "bbl-riscv64sigcheri-virt-fw_jump.bin"
+            else:
+                bbl_fw_jump_name = "bbl-riscv64cheri-virt-fw_jump.bin"
+
             self.run_cmd(
                 self.sdk_bindir / "llvm-objcopy",
                 "-S",
                 "-O",
                 "binary",
                 self.get_installed_kernel_path(self),
-                qemu_fw_dir / "bbl-riscv64cheri-virt-fw_jump.bin",
+                qemu_fw_dir / bbl_fw_jump_name,
             )
 
 
