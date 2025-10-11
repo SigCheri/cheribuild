@@ -60,6 +60,7 @@ class BuildGDBBase(CrossCompileAutotoolsProject):
         *CompilationTargets.ALL_CHERIBSD_HYBRID_FOR_PURECAP_ROOTFS_TARGETS,
         *CompilationTargets.ALL_SUPPORTED_FREEBSD_TARGETS,
         CompilationTargets.NATIVE_NON_PURECAP,
+        CompilationTargets.CHERIBSD_RISCV_HYBRIDSIG
     )
     default_architecture = CompilationTargets.NATIVE_NON_PURECAP
     prefer_full_lto_over_thin_lto = True
