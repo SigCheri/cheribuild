@@ -873,6 +873,8 @@ class LaunchCheriBSD(_RunMultiArchFreeBSDImage):
         # Note: QEMU 4.2+ embeds opensbi, for CHERI, we have to use BBL (for now):
         if cls.get_crosscompile_target().is_hybrid_or_purecap_cheri([CPUArchitecture.RISCV64]):
             result += ("bbl-baremetal-riscv64-purecap",)
+        if cls.get_crosscompile_target().is_hybridsig_or_puresig_sigcheri([CPUArchitecture.RISCV64]):
+            result += ("bbl-baremetal-riscv64-purecap-hybridsig",)
         return result
 
     def get_qemu_mfs_root_kernel(self, use_benchmark_kernel: bool) -> Path:

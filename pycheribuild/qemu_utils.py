@@ -234,7 +234,9 @@ def qemu_supports_9pfs(qemu: Path, *, config: ConfigBase) -> bool:
 
 def riscv_bios_arguments(xtarget: CrossCompileTarget, _, prefer_bbl=True) -> "list[str]":
     assert xtarget.is_riscv(include_purecap=True)
-    if xtarget.is_hybrid_or_purecap_cheri([CPUArchitecture.RISCV64]):
+    if xtarget.is_hybridsig_or_puresig_sigcheri([CPUArchitecture.RISCV64]):
+        return ["-bios", "bbl-riscv64sigcheri-virt-fw_jump.bin"]
+    elif xtarget.is_hybrid_or_purecap_cheri([CPUArchitecture.RISCV64]):
         # noinspection PyUnreachableCode
         if prefer_bbl:
             # We want a purecap BBL:
