@@ -448,7 +448,7 @@ class BuildUpstreamQEMU(BuildQEMUBase):
 
 class BuildQEMU(BuildQEMUBase):
     target = "qemu"
-    repository = GitRepository("https://github.com/SigCheri/qemu.git", default_branch="qemu-cheri")
+    repository = GitRepository("https://github.com/SigCheri/qemu.git", default_branch="sigcheri")
     default_targets = (
         # "arm-softmmu,aarch64-softmmu,morello-softmmu,"
         # "mips64-softmmu,mips64cheri128-softmmu,"

@@ -51,7 +51,7 @@ class BuildBBLBase(CrossCompileAutotoolsProject):
     repository = GitRepository(
         "https://github.com/SigCheri/riscv-pk",
         force_branch=True,
-        default_branch="cheri_purecap",
+        default_branch="sigcheri",
         # Compilation fixes for clang and support for CHERI
         old_urls=[b"https://github.com/jrtc27/riscv-pk.git"],
     )

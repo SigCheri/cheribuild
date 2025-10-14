@@ -280,7 +280,7 @@ class BuildUpstreamGDB(BuildGDBBase):
 class BuildGDB(BuildGDBBase):
     path_in_rootfs = "/usr/local"  # Always install gdb as /usr/local/bin/gdb
     native_install_dir = DefaultInstallDir.CHERI_SDK
-    default_branch = "cheri-14"
+    default_branch = "sigcheri"
     repository = GitRepository(
         "https://github.com/SigCheri/gdb.git",
         # Branch name is changed for every major GDB release:
