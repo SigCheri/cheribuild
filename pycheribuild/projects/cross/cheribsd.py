@@ -90,8 +90,9 @@ class KernelABI(Enum):
     NOCHERI = "no-cheri"
     HYBRID = "hybrid"
     PURECAP = "purecap"
+    HYBRIDSIG = "hybridsig"
+    PURECAP_HYBRIDSIG = "purecap-hybridsig"
     PURECAP_BENCHMARK = "purecap-benchmark"
-
 
 class ConfigPlatform(Enum):
     QEMU = "qemu"
@@ -148,12 +149,14 @@ class KernelConfigFactory:
     platform_name_map: "dict[ConfigPlatform, Optional[str]]" = {}
 
     def get_kabi_name(self, kernel_abi) -> Optional[str]:
-        if kernel_abi == KernelABI.NOCHERI:
+        if kernel_abi in [KernelABI.NOCHERI, KernelABI.HYBRIDSIG]:
             return None
         elif kernel_abi == KernelABI.HYBRID:
             return "CHERI"
         elif kernel_abi == KernelABI.PURECAP:
             return f"CHERI{self.separator}PURECAP"
+        elif kernel_abi == KernelABI.PURECAP_HYBRIDSIG:
+            return f"SIGCHERI{self.separator}PURECAP"
 
     def get_platform_name(self, platforms: "set[ConfigPlatform]") -> Optional[str]:
         for platform in platforms:
@@ -163,7 +166,7 @@ class KernelConfigFactory:
         assert False, "Should not be reached..."
 
     def get_available_kabis(self) -> "list[KernelABI]":
-        return [KernelABI.NOCHERI, KernelABI.HYBRID, KernelABI.PURECAP]
+        return [KernelABI.NOCHERI, KernelABI.HYBRID, KernelABI.PURECAP, KernelABI.HYBRIDSIG, KernelABI.PURECAP_HYBRIDSIG]
 
     def get_flag_names(
         self,
@@ -823,7 +826,14 @@ class BuildFreeBSD(BuildFreeBSDBase):
             "TARGET": self.target_info.freebsd_target,
             "TARGET_ARCH": self.target_info.freebsd_target_arch,
         }
-        if self.crosscompile_target.is_hybrid_or_purecap_cheri():
+        if self.crosscompile_target.is_riscv64(include_purecap=True):
+            cpu_type_list = []
+            if self.crosscompile_target.is_hybrid_or_purecap_cheri():
+                cpu_type_list.append("cheri")
+            if self.crosscompile_target.is_hybridsig_or_puresig_sigcheri():
+                cpu_type_list.append("sigcheri")
+            result["TARGET_CPUTYPE"] = '-'.join(cpu_type_list)
+        elif self.crosscompile_target.is_hybrid_or_purecap_cheri():
             if self.crosscompile_target.is_aarch64(include_purecap=True):
                 result["TARGET_CPUTYPE"] = "morello"
                 # FIXME: still needed?
@@ -832,8 +842,7 @@ class BuildFreeBSD(BuildFreeBSDBase):
                 result["TARGET_CPUTYPE"] = "cheri"
                 if self.compiling_for_mips(include_purecap=True):
                     result["CHERI"] = self.config.mips_cheri_bits_str
-        if self.crosscompile_target.is_hybridsig_or_puresig_sigcheri():
-            result["TARGET_CPUTYPE"] = "sigcheri"
+
         return result
 
     def _setup_make_args(self) -> None:
@@ -1937,7 +1946,12 @@ class BuildCHERIBSD(BuildFreeBSD):
         # XXX: Because the config option has _allow_unknown_targets it exists
         # in the base class and thus still inherited by non-purecap-kernel
         # targets
-        if self.crosscompile_target in self.purecap_kernel_targets:
+        if self.crosscompile_target.is_sigcheri_hybridsig():
+            if self.crosscompile_target.is_cheri_purecap():
+                kernel_abi = KernelABI.PURECAP_HYBRIDSIG
+            else:
+                kernel_abi = KernelABI.HYBRIDSIG
+        elif self.crosscompile_target in self.purecap_kernel_targets:
             kernel_abi = self.default_kernel_abi
         elif self.crosscompile_target.is_hybrid_or_purecap_cheri():
             kernel_abi = KernelABI.HYBRID
