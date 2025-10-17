@@ -832,6 +832,8 @@ class BuildFreeBSD(BuildFreeBSDBase):
                 result["TARGET_CPUTYPE"] = "cheri"
                 if self.compiling_for_mips(include_purecap=True):
                     result["CHERI"] = self.config.mips_cheri_bits_str
+        if self.crosscompile_target.is_hybridsig_or_puresig_sigcheri():
+            result["TARGET_CPUTYPE"] = "sigcheri"
         return result
 
     def _setup_make_args(self) -> None:
