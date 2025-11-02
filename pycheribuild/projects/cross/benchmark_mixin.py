@@ -51,7 +51,9 @@ class BenchmarkMixin(_BenchmarkMixinBase):
     supported_architectures = (
         *CompilationTargets.ALL_CHERIBSD_TARGETS_WITH_HYBRID_FOR_PURECAP_ROOTFS + CompilationTargets.ALL_NATIVE,
         CompilationTargets.CHERIBSD_RISCV_HYBRIDSIG,
-        CompilationTargets.CHERIBSD_RISCV_PURECAP_HYBRIDSIG
+        CompilationTargets.CHERIBSD_RISCV_PURECAP_HYBRIDSIG,
+        CompilationTargets.CHERIBSD_RISCV_PURESIG_FOR_HYBRIDISG_ROOTFS,
+        CompilationTargets.CHERIBSD_RISCV_PURESIG_FOR_PURECAP_HYBRIDSIG_ROOTFS,
     )
     default_build_type = BuildType.RELEASE
     prefer_full_lto_over_thin_lto = True
