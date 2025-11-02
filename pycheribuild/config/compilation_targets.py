@@ -331,6 +331,7 @@ class _ClangBasedTargetInfo(TargetInfo, ABC):
         assert xtarget.is_riscv(include_purecap=True)
         xlen = xtarget.cpu_architecture.word_bits()
         purecap = xtarget.is_cheri_purecap()
+        puresig = xtarget.is_sigcheri_puresig()
         abi = ""
         if xlen == 32:
             abi += "i"
@@ -339,7 +340,12 @@ class _ClangBasedTargetInfo(TargetInfo, ABC):
             abi += "p"
         abi += str(xlen)
         if purecap:
-            abi += "pc" + str(xlen * 2)
+            abi += "p" 
+            if puresig:
+                abi += "s"
+            else:
+                abi += "c"
+            abi += str(xlen * 2)
         if not softfloat:
             abi += "d"
         return abi
