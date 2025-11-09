@@ -141,7 +141,7 @@ class BuildLLVMTestSuiteBase(BenchmarkMixin, CrossCompileCMakeProject):
 
 class BuildLLVMTestSuite(BuildLLVMTestSuiteBase):
     target = "llvm-test-suite"
-    repository = GitRepository("git@github.com:SigCheri/llvm-test-suite.git")
+    repository = GitRepository("https://github.com/SigCheri/llvm-test-suite.git")
     default_install_dir = DefaultInstallDir.DO_NOT_INSTALL
 
     def setup(self):
