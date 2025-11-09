@@ -623,6 +623,12 @@ class BuildUnixBench(BenchmarkMixin, CrossCompileProject):
         self.makedirs(install_dir)
         self.clean_directory(install_dir / "pgms", keep_root=False, ensure_dir_exists=False)
         self.copy_directory(self.build_dir / "UnixBench" / "pgms", install_dir / "pgms")
+        self.clean_directory(install_dir / "testdir", keep_root=False, ensure_dir_exists=False)
+        self.copy_directory(self.build_dir / "UnixBench" / "testdir", install_dir / "testdir")
+        self.install_file(self.source_dir / "UnixBench" / "testdir" / "sort.src", install_dir / "pgms" / "sort.src")
+        self.install_file(self.source_dir / "UnixBench" / "testdir" / "cctest.c", install_dir / "pgms" / "cctest.c")
+        self.install_file(self.source_dir / "UnixBench" / "testdir" / "dc.dat", install_dir / "pgms" / "dc.dat")    
+        self.install_file(self.source_dir / "UnixBench" / "testdir" / "large.txt", install_dir / "pgms" / "large.txt")
         self.install_file(self.source_dir / "run.sh", install_dir / "run.sh")
         self.install_file(self.source_dir / "Makefile", install_dir / "Makefile")
 
