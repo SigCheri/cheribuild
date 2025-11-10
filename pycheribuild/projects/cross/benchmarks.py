@@ -28,6 +28,7 @@
 # SUCH DAMAGE.
 #
 import os
+import stat
 import shutil
 import tempfile
 import typing
@@ -427,10 +428,33 @@ class BuildSpec2006New(BuildLLVMTestSuiteBase):
         super().configure(**kwargs)
 
     def install(self, **kwargs):
-        self.install_benchmark_dir(str(self.build_dir / "External/SPEC/CINT2006"))
-        # self.install_benchmark_dir(str(self.build_dir / "External/SPEC/CFP2006"))
+        spec_root = self.install_dir / "External" / "SPEC"
+        cint2006_root = spec_root / "CINT2006"
+        self.makedirs(spec_root)
+        self.install_benchmark_dir(
+            self.build_dir / "External/SPEC/CINT2006",
+            cint2006_root,
+        )
+        tools_src = self.build_dir / "tools"
+        if tools_src.exists():
+            spec_tools_dir = spec_root / "tools"
+            self.clean_directory(spec_tools_dir, keep_root=False, ensure_dir_exists=False)
+            self.copy_directory(tools_src, spec_tools_dir)
+            top_level_tools_dir = self.install_dir / "tools"
+            self.clean_directory(top_level_tools_dir, keep_root=False, ensure_dir_exists=False)
+            self.copy_directory(tools_src, top_level_tools_dir)
+        # Provide convenience symlinks to maintain the previous flattened layout.
+        if cint2006_root.exists():
+            for entry in cint2006_root.iterdir():
+                link_path = self.install_dir / entry.name
+                if link_path.exists() or link_path.is_symlink():
+                    if link_path.is_dir() and not link_path.is_symlink():
+                        self.clean_directory(link_path, keep_root=False, ensure_dir_exists=False)
+                    else:
+                        self.delete_file(link_path, warn_if_missing=False)
+                self.create_symlink(entry, link_path)
 
-    def install_benchmark_dir(self, root_dir: str):
+    def install_benchmark_dir(self, root_dir: Path, dest_root: Path):
         for curdir, dirnames, filenames in os.walk(root_dir):
             # We don't run some benchmarks (e.g. consumer-typeset or consumer-lame) yet
             for ignored_dirname in ("CMakeFiles",):
@@ -439,7 +463,8 @@ class BuildSpec2006New(BuildLLVMTestSuiteBase):
             relpath = os.path.relpath(curdir, root_dir)
             for filename in filenames:
                 new_file = Path(curdir, filename)
-                self.install_file(new_file, self.install_dir / relpath / filename, print_verbose_only=True)
+                destination = dest_root / relpath / filename
+                self.install_file(new_file, destination, print_verbose_only=True, force=True)
 
 
 for _arch in BuildSpec2006New.supported_architectures:
