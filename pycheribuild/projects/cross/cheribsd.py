@@ -149,10 +149,12 @@ class KernelConfigFactory:
     platform_name_map: "dict[ConfigPlatform, Optional[str]]" = {}
 
     def get_kabi_name(self, kernel_abi) -> Optional[str]:
-        if kernel_abi in [KernelABI.NOCHERI, KernelABI.HYBRIDSIG]:
+        if kernel_abi == KernelABI.NOCHERI:
             return None
         elif kernel_abi == KernelABI.HYBRID:
             return "CHERI"
+        elif kernel_abi == KernelABI.HYBRIDSIG:
+            return "SIGCHERI"
         elif kernel_abi == KernelABI.PURECAP:
             return f"CHERI{self.separator}PURECAP"
         elif kernel_abi == KernelABI.PURECAP_HYBRIDSIG:
@@ -281,6 +283,47 @@ class RISCVKernelConfigFactory(KernelConfigFactory):
                 )
             )
             configs.append(self.make_config({ConfigPlatform.GFE}, kernel_abi, nocaprevoke=True, mfsroot=True))
+
+        configs.append(
+            CheriBSDConfig(
+                "QEMU-MINIMAL",
+                {ConfigPlatform.QEMU},
+                kernel_abi=KernelABI.NOCHERI,
+                default=False,
+            )
+        )
+        configs.append(
+            CheriBSDConfig(
+                "CHERI-QEMU-MINIMAL",
+                {ConfigPlatform.QEMU},
+                kernel_abi=KernelABI.HYBRID,
+                default=False,
+            )
+        )
+        configs.append(
+            CheriBSDConfig(
+                "CHERI-PURECAP-QEMU-MINIMAL",
+                {ConfigPlatform.QEMU},
+                kernel_abi=KernelABI.PURECAP,
+                default=False,
+            )
+        )
+        configs.append(
+            CheriBSDConfig(
+                "SIGCHERI-QEMU-MINIMAL",
+                {ConfigPlatform.QEMU},
+                kernel_abi=KernelABI.HYBRIDSIG,
+                default=False,
+            )
+        )
+        configs.append(
+            CheriBSDConfig(
+                "SIGCHERI-PURECAP-QEMU-MINIMAL",
+                {ConfigPlatform.QEMU},
+                kernel_abi=KernelABI.PURECAP_HYBRIDSIG,
+                default=False,
+            )
+        )
 
         return configs
 
@@ -1926,6 +1969,13 @@ class BuildCHERIBSD(BuildFreeBSD):
             only_add_for_targets=CompilationTargets.ALL_CHERIBSD_CHERI_TARGETS_WITH_HYBRID,
             help="Build kernels without caprevoke support",
         )
+
+        cls.light = cls.add_bool_option(
+            "light",
+            show_help=True,
+            help="Use the minimal CHERI purecap QEMU kernel configuration and skip building extra kernels",
+            extra_fallback_config_names=["light"],
+        )
         if kernel_only_target:
             return  # The remaining options only affect the userspace build
         cls.sysroot_only = cls.add_bool_option(
@@ -1941,6 +1991,29 @@ class BuildCHERIBSD(BuildFreeBSD):
         configs = self.extra_kernel_configs()
         self.extra_kernels += [c.kernconf for c in configs if not c.mfsroot]
         self.extra_kernels_with_mfs += [c.kernconf for c in configs if c.mfsroot]
+
+        if self.light:
+            light_kernconfs = {
+                CompilationTargets.CHERIBSD_RISCV_NO_CHERI: "QEMU-MINIMAL",
+                CompilationTargets.CHERIBSD_RISCV_HYBRID: "CHERI-QEMU-MINIMAL",
+                CompilationTargets.CHERIBSD_RISCV_PURECAP: "CHERI-PURECAP-QEMU-MINIMAL",
+                CompilationTargets.CHERIBSD_RISCV_HYBRIDSIG: "SIGCHERI-QEMU-MINIMAL",
+                CompilationTargets.CHERIBSD_RISCV_PURECAP_HYBRIDSIG: "SIGCHERI-PURECAP-QEMU-MINIMAL",
+            }
+            minimal_kernconf = light_kernconfs.get(self.crosscompile_target)
+            if minimal_kernconf:
+                if CheriBSDConfigTable.get_entry(self.crosscompile_target, minimal_kernconf) is None:
+                    self.fatal(
+                        minimal_kernconf,
+                        "kernel configuration not available for target",
+                        self.crosscompile_target.target,
+                    )
+                self.verbose_print("Using", minimal_kernconf, "kernel configuration due to --light.")
+                self.kernel_config = minimal_kernconf
+                self.extra_kernels = []
+                self.extra_kernels_with_mfs = []
+            else:
+                self.warning("--light is only supported for selected CheriBSD RISC-V targets; ignoring.")
 
     def get_default_kernel_abi(self) -> KernelABI:
         # XXX: Because the config option has _allow_unknown_targets it exists
